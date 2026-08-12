@@ -1,0 +1,124 @@
+import pygame
+
+# ============================================================
+# CONFIGURACIÓN — ajustar según el juego
+# ============================================================
+N = 8                     # tamaño del tablero (NxN)
+CELL = 70                 # tamaño de cada casilla en píxeles
+WIDTH = HEIGHT = CELL * N
+
+COLOR_CLARO = (238, 238, 210)
+COLOR_OSCURO = (118, 150, 86)
+COLOR_SELECCION = (246, 246, 105)
+COLOR_DESTINO = (100, 100, 100)
+COLOR_A = (200, 30, 30)
+COLOR_B = (30, 30, 200)
+
+# ============================================================
+# ESTADO DEL JUEGO
+# ============================================================
+def setup_board():
+    """Posición inicial de las fichas. Reemplazar por las reglas
+    de tu juego (en Dodgem, por ejemplo, no se llena toda la fila)."""
+    b = [[None] * N for _ in range(N)]
+    for col in range(N):
+        b[0][col] = 'A'
+        b[N - 1][col] = 'B'
+    return b
+
+board = setup_board()
+turno = 'A'
+seleccion = None  # (row, col) o None
+
+# ============================================================
+# LÓGICA DEL JUEGO — acá va lo específico de cada juego
+# ============================================================
+def movimientos_validos(pos):
+    """Devuelve las casillas (row, col) a las que se puede mover
+    la ficha en 'pos'. Ejemplo genérico: una casilla ortogonal vacía."""
+    row, col = pos
+    destinos = []
+    for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+        r, c = row + dr, col + dc
+        if 0 <= r < N and 0 <= c < N and board[r][c] is None:
+            destinos.append((r, c))
+    return destinos
+
+def mover_ficha(origen, destino):
+    board[destino[0]][destino[1]] = board[origen[0]][origen[1]]
+    board[origen[0]][origen[1]] = None
+
+def cambiar_turno():
+    global turno
+    turno = 'B' if turno == 'A' else 'A'
+
+# ============================================================
+# INTERACCIÓN CON MOUSE
+# ============================================================
+def celda_desde_click(pos):
+    x, y = pos
+    return y // CELL, x // CELL
+
+def manejar_click(pos):
+    global seleccion
+    row, col = celda_desde_click(pos)
+
+    if seleccion is None:
+        if board[row][col] == turno:
+            seleccion = (row, col)
+    else:
+        if (row, col) in movimientos_validos(seleccion):
+            mover_ficha(seleccion, (row, col))
+            cambiar_turno()
+        seleccion = None
+
+# ============================================================
+# DIBUJO
+# ============================================================
+def dibujar_tablero(screen):
+    destinos = movimientos_validos(seleccion) if seleccion else []
+    for row in range(N):
+        for col in range(N):
+            color = COLOR_CLARO if (row + col) % 2 == 0 else COLOR_OSCURO
+            if (row, col) == seleccion:
+                color = COLOR_SELECCION
+            pygame.draw.rect(screen, color, (col * CELL, row * CELL, CELL, CELL))
+            if (row, col) in destinos:
+                centro = (col * CELL + CELL // 2, row * CELL + CELL // 2)
+                pygame.draw.circle(screen, COLOR_DESTINO, centro, 8)
+
+def dibujar_fichas(screen):
+    for row in range(N):
+        for col in range(N):
+            pieza = board[row][col]
+            if pieza:
+                centro = (col * CELL + CELL // 2, row * CELL + CELL // 2)
+                color = COLOR_A if pieza == 'A' else COLOR_B
+                pygame.draw.circle(screen, color, centro, CELL // 3)
+
+# ============================================================
+# LOOP PRINCIPAL
+# ============================================================
+def main():
+    pygame.init()
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    pygame.display.set_caption("Plantilla de tablero — Pygame")
+    clock = pygame.time.Clock()
+
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                manejar_click(event.pos)
+
+        dibujar_tablero(screen)
+        dibujar_fichas(screen)
+        pygame.display.flip()
+        clock.tick(60)
+
+    pygame.quit()
+
+if __name__ == "__main__":
+    main()
