@@ -1,124 +1,306 @@
-import pygame
+import os
+# Imprime el tablero en pantalla
+def imprimir_tablero(tablero):
+    print()
+    print(" ", end=" ")
+    for i, fila in enumerate(tablero):
+        print(i+1, end=" ")
+    print()
+    for j,fila in enumerate(tablero):
+        print(j+1, end=" ")
+        for elem in fila:
+            print(elem, end=" ")
+        print()
+    print()
 
-# ============================================================
-# CONFIGURACIÓN — ajustar según el juego
-# ============================================================
-N = 8                     # tamaño del tablero (NxN)
-CELL = 70                 # tamaño de cada casilla en píxeles
-WIDTH = HEIGHT = CELL * N
+# Crea el tablero del tamaño que se necesite
+def generar_tablero(n):
+    tablero = []
+    for i in range(n):
+        fila = []
+        for j in range(n):
+            fila.append('.')
 
-COLOR_CLARO = (238, 238, 210)
-COLOR_OSCURO = (118, 150, 86)
-COLOR_SELECCION = (246, 246, 105)
-COLOR_DESTINO = (100, 100, 100)
-COLOR_A = (200, 30, 30)
-COLOR_B = (30, 30, 200)
+        tablero.append(fila)
+    return tablero
 
-# ============================================================
-# ESTADO DEL JUEGO
-# ============================================================
-def setup_board():
-    """Posición inicial de las fichas. Reemplazar por las reglas
-    de tu juego (en Dodgem, por ejemplo, no se llena toda la fila)."""
-    b = [[None] * N for _ in range(N)]
-    for col in range(N):
-        b[0][col] = 'A'
-        b[N - 1][col] = 'B'
-    return b
+# Clase Ficha
+class Ficha:
+    def __init__(self, nombre, equipo, fila, columna):
 
-board = setup_board()
-turno = 'A'
-seleccion = None  # (row, col) o None
+        # El atributo nombre no se si dejarlo todavía, puede que no se necesite
+        self.nombre = nombre
 
-# ============================================================
-# LÓGICA DEL JUEGO — acá va lo específico de cada juego
-# ============================================================
-def movimientos_validos(pos):
-    """Devuelve las casillas (row, col) a las que se puede mover
-    la ficha en 'pos'. Ejemplo genérico: una casilla ortogonal vacía."""
-    row, col = pos
-    destinos = []
-    for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-        r, c = row + dr, col + dc
-        if 0 <= r < N and 0 <= c < N and board[r][c] is None:
-            destinos.append((r, c))
-    return destinos
+        # Coordenadas de la ficha en el tablero
+        # Las coordenadas funciónan desde el 0 hasta n-1
+        # Al usuario se pedirán los movimientos en coordenadas desde el 1 hasta n
+        self.posicion = [fila, columna]
 
-def mover_ficha(origen, destino):
-    board[destino[0]][destino[1]] = board[origen[0]][origen[1]]
-    board[origen[0]][origen[1]] = None
+        # El equipo es solamente la forma en la que se mostrará la ficha en pantalla
+        self.equipo = equipo
+        self.corona = False
 
-def cambiar_turno():
-    global turno
-    turno = 'B' if turno == 'A' else 'A'
+    def getequipo(self):
+        return self.equipo
 
-# ============================================================
-# INTERACCIÓN CON MOUSE
-# ============================================================
-def celda_desde_click(pos):
-    x, y = pos
-    return y // CELL, x // CELL
+    def solicitar_movimiento(self):
+        peticion = None
+        while peticion is None or not peticion.isdigit() or int(peticion) < 1 or int(peticion) > 3:
+            if peticion != None:
+                print("ATENCIÓN: Debe de ingresar un número que se muestre en las opciones.\n\n")
 
-def manejar_click(pos):
-    global seleccion
-    row, col = celda_desde_click(pos)
+            print("¿Hacia donde desea mover la ficha?")
+            print("1- Arriba")
+            print("2- Derecha")
+            if self.equipo == "azul":
+                print("3- Abajo")
+            else:
+                print("3- Izquierda")
 
-    if seleccion is None:
-        if board[row][col] == turno:
-            seleccion = (row, col)
-    else:
-        if (row, col) in movimientos_validos(seleccion):
-            mover_ficha(seleccion, (row, col))
-            cambiar_turno()
-        seleccion = None
+            peticion = input("Ingrese número: ")
 
-# ============================================================
-# DIBUJO
-# ============================================================
-def dibujar_tablero(screen):
-    destinos = movimientos_validos(seleccion) if seleccion else []
-    for row in range(N):
-        for col in range(N):
-            color = COLOR_CLARO if (row + col) % 2 == 0 else COLOR_OSCURO
-            if (row, col) == seleccion:
-                color = COLOR_SELECCION
-            pygame.draw.rect(screen, color, (col * CELL, row * CELL, CELL, CELL))
-            if (row, col) in destinos:
-                centro = (col * CELL + CELL // 2, row * CELL + CELL // 2)
-                pygame.draw.circle(screen, COLOR_DESTINO, centro, 8)
+        return int(peticion)
 
-def dibujar_fichas(screen):
-    for row in range(N):
-        for col in range(N):
-            pieza = board[row][col]
-            if pieza:
-                centro = (col * CELL + CELL // 2, row * CELL + CELL // 2)
-                color = COLOR_A if pieza == 'A' else COLOR_B
-                pygame.draw.circle(screen, color, centro, CELL // 3)
+    # Esta función se debe de revisar, debido a que no tengo claro todavía de como retornar el tablero o como hacer para actualizar las listas de las fichas
+    # La parte lógica yá está hecha, esto quiere decir que esta función detecta los movimientos legales, cuando una pieza corona y cuando es inválida la jugada porque se acaba el tablero
 
-# ============================================================
-# LOOP PRINCIPAL
-# ============================================================
-def main():
-    pygame.init()
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption("Plantilla de tablero — Pygame")
-    clock = pygame.time.Clock()
+    def mover_ficha(self, tablero):
+        movimiento_valido = False
+        while not movimiento_valido:
+            peticion = self.solicitar_movimiento()
 
-    running = True
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                manejar_click(event.pos)
+            # Movimiento hacia arriba
+            if peticion == 1:
+                # Errores de fin del tablero
+                if self.posicion[0] == 0 and self.equipo == "azul":
+                    print("ERROR: Movimiento no válido")
+                # En caso de coronación de la ficha
+                elif self.posicion[0] == 0 and self.equipo == "rojo":
+                    movimiento_valido = True
+                    tablero[self.posicion[0]][self.posicion[1]] = "."
+                    self.posicion[0] = None
+                    self.corona = True
 
-        dibujar_tablero(screen)
-        dibujar_fichas(screen)
-        pygame.display.flip()
-        clock.tick(60)
+                # Error en caso de haber otra ficha
+                elif tablero[(self.posicion[0]) - 1][self.posicion[1]] != ".":
+                    print("ERROR: Movimiento no válido")
 
-    pygame.quit()
+                # Cambio de pieza válida
+                else:
+                    movimiento_valido = True
+                    aux =[self.posicion[0], self.posicion[1]]
+                    self.posicion[0] = self.posicion[0] - 1
+                    if self.equipo == "azul":
+                        tablero[self.posicion[0]][self.posicion[1]] = "X"
+                    else:
+                        tablero[self.posicion[0]][self.posicion[1]] = "O"
+                    tablero[aux[0]][aux[1]] = "."
 
-if __name__ == "__main__":
-    main()
+            # Movimiento hacia la derecha
+            elif peticion == 2:
+                # Errores de fin del tablero
+                if self.posicion[1] == len(tablero) - 1 and self.equipo == "rojo":
+                    print("ERROR: Movimiento no válido")
+
+                # En caso de coronación de la ficha
+                elif self.posicion[1] == len(tablero) - 1 and self.equipo == "azul":
+                    movimiento_valido = True
+                    tablero[self.posicion[0]][self.posicion[1]] = "."
+                    self.posicion[1] = None
+                    self.corona = True
+                    print("Felicidades!")
+                # Error en caso de haber otra ficha
+                elif tablero[self.posicion[0]][self.posicion[1] + 1] != ".":
+                    print("ERROR: Movimiento no válido")
+
+                # Cambio de pieza válida
+                else:
+                    movimiento_valido = True
+                    aux = [self.posicion[0], self.posicion[1]]
+                    self.posicion[1] = self.posicion[1] + 1
+
+                    if self.equipo == "azul":
+                        tablero[self.posicion[0]][self.posicion[1]] = "X"
+                    else:
+                        tablero[self.posicion[0]][self.posicion[1]] = "O"
+                    tablero[aux[0]][aux[1]] = "."
+
+            # Movimiento hacia abajo
+            elif peticion == 3 and self.equipo == "azul":
+                # Errores de fin del tablero
+                if self.posicion[0] == len(tablero) - 1:
+                    print("ERROR: Movimiento no válido")
+
+                # Error en caso de haber otra ficha
+                elif tablero[self.posicion[0] + 1][self.posicion[1]] != ".":
+                    print("ERROR: Movimiento no válido")
+
+                # Cambio de pieza válida
+                else:
+                    movimiento_valido = True
+                    aux = [self.posicion[0], self.posicion[1]]
+                    self.posicion[0] = self.posicion[0] + 1
+                    tablero[self.posicion[0]][self.posicion[1]] = "X"
+                    tablero[aux[0]][aux[1]] = "."
+
+            # Movimiento hacia la izquierda
+            elif peticion == 3 and self.equipo == "rojo":
+
+                # Errores de fin del tablero
+                if self.posicion[1] == 0:
+                    print("ERROR: Movimiento no válido")
+
+                # Error en caso de haber otra ficha
+                elif tablero[self.posicion[0]][self.posicion[1] - 1] != ".":
+                    print("ERROR: Movimiento no válido")
+
+                # Cambio de pieza válida
+                else:
+                    movimiento_valido = True
+                    aux = [self.posicion[0], self.posicion[1]]
+                    self.posicion[1] = self.posicion[1] - 1
+                    tablero[self.posicion[0]][self.posicion[1]] = "O"
+                    tablero[aux[0]][aux[1]] = "."
+
+# Llena el tablero de las fichas que se utilizarán
+# Las fichas se agregan a una lista la cual almacena la info de cada una
+def llenar_tablero(tablero, azules, rojos):
+    # Bucle para agregar las fichas
+    for i, fila in enumerate(tablero):
+        # Hasta que no se llegue al final se agregan fichas
+        if i == len(tablero) - 1:
+            continue
+
+        # Se crea la ficha y se agrega a la lista
+        azules.append(Ficha(i+1, "azul", i, 0))
+        rojos.append(Ficha(i+1, "rojo", len(tablero) -1, i+1))
+        # Se agrega visualmente al tablero
+        tablero[i][0]= "X"
+        tablero[len(tablero)-1][i+1]= "O"
+
+# Se le pide el usuario que seleccione las coordenadas de la ficha que quiere mover
+def seleccion_ficha(equipo, tablero):
+    print("Seleccione la ficha que desea jugar.")
+
+    fila = input("Ingrese la fila (horizontal) de la ficha: ")
+    while not fila.isdigit() or int(fila) < 1 or int(fila) > len(tablero):
+        print("ERROR: Ingrese un valor numérico válido")
+        fila = input("Ingrese la fila (horizontal) de la ficha: ")
+
+    int(fila)
+
+    columna = input("Ingrese la columna de la ficha: ")
+    while not columna.isdigit() or int(columna) < 1 or int(columna) > len(tablero):
+        print("ERROR: Ingrese un valor numérico válido")
+        columna = input("Ingrese la columna de la ficha: ")
+
+    int(columna)
+    coordenadas = [int(fila) - 1, int(columna) - 1]
+
+    espacio = tablero[coordenadas[0]][coordenadas[1]]
+
+    if equipo == "azul":
+        if espacio == "X":
+            return coordenadas
+        else:
+            print("Coordenada no válida.")
+
+    elif equipo == "rojo":
+        if espacio == "O":
+
+            return coordenadas
+        else:
+            print("Coordenada no válida.")
+
+    # Si retorna None es porque la coordenada seleccionada no es válida
+    return None
+
+# Recorre las listas de las fichas buscando si faltan por coronar o no
+def faltan_fichas_coronar(equipo_x):
+    for ficha in equipo_x:
+        if not ficha.corona:
+            return False
+
+    return True
+
+def equipo_bloqueado(equipo_x, tablero):
+    #Bucle que recorre la lista de fichas del equipo y revisa si alguna puede moverse, si alguna puede moverse retorna False, si ninguna puede moverse retorna True
+    for ficha in equipo_x:
+        if ficha.corona:
+            continue
+        if ficha.equipo == "azul":
+            if ficha.posicion[0] > 0 and tablero[ficha.posicion[0]-1][ficha.posicion[1]] == ".":
+                return False
+            elif ficha.posicion[1] < len(tablero)-1 and tablero[ficha.posicion[0]][ficha.posicion[1]+1] == ".":
+                return False
+            elif ficha.posicion[0] < len(tablero)-1 and tablero[ficha.posicion[0]+1][ficha.posicion[1]] == ".":
+                return False
+
+        elif ficha.equipo == "rojo":
+            if ficha.posicion[0] > 0 and tablero[ficha.posicion[0]-1][ficha.posicion[1]] == ".":
+                return False
+            elif ficha.posicion[1] < len(tablero)-1 and tablero[ficha.posicion[0]][ficha.posicion[1]+1] == ".":
+                return False
+            elif ficha.posicion[1] > 0 and tablero[ficha.posicion[0]][ficha.posicion[1]-1] == ".":
+                return False
+
+    return True
+
+def victoria_bloqueo():
+    return False
+
+# Función principal
+def jugar(n):
+    print("Bienvenido a Dodgem!!!")
+    print("Comienza el equipo de las X")
+    tablero = generar_tablero(n)
+    equipo_a = []
+    equipo_r = []
+    llenar_tablero(tablero, equipo_a, equipo_r)
+    parar_juego = False
+
+    # Ciclo que no termina hasta que uno de los dos gane
+    while not parar_juego:
+        # Juega X
+        print("Turno del equipo de las X")
+        imprimir_tablero(tablero)
+        coordenada_jugar = None
+
+        while coordenada_jugar == None:
+            coordenada_jugar = seleccion_ficha("azul", tablero)
+
+        for ficha in equipo_a:
+            if ficha.posicion == coordenada_jugar:
+                ficha.mover_ficha(tablero)
+
+        if faltan_fichas_coronar(equipo_a):
+            print("Felicidades. Gana el equipo de las X")
+            exit()
+
+        limpiar_consola()
+        # Juega O
+        print("Turno del equipo de los O")
+        imprimir_tablero(tablero)
+        coordenada_jugar = None
+        while coordenada_jugar == None:
+            coordenada_jugar = seleccion_ficha("rojo", tablero)
+        for ficha in equipo_r:
+            if ficha.posicion == coordenada_jugar:
+                ficha.mover_ficha(tablero)
+
+        if faltan_fichas_coronar(equipo_r):
+            print("Felicidades. Gana el equipo de las O")
+            exit()
+
+        limpiar_consola()
+
+
+def limpiar_consola():
+    os.system('cls' if os.name == 'nt' else 'clear')
+    print("\n" * 500)
+
+jugar(4)
+
+
+
+
