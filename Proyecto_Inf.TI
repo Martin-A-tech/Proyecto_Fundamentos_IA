@@ -224,23 +224,31 @@ def faltan_fichas_coronar(equipo_x):
     return True
 
 def equipo_bloqueado(equipo_x, tablero):
-    #Bucle que recorre la lista de fichas del equipo y revisa si alguna puede moverse, si alguna puede moverse retorna False, si ninguna puede moverse retorna True
+    # Bucle que recorre la lista de fichas del equipo y revisa si alguna puede moverse, 
+    # si alguna puede moverse retorna False, si ninguna puede moverse retorna True
     for ficha in equipo_x:
+        # Si hay una ficha que ya corono, no se revisa si puede moverse, porque ya no puede moverse
         if ficha.corona:
             continue
         if ficha.equipo == "azul":
+            # Movimiento hacia arriba
             if ficha.posicion[0] > 0 and tablero[ficha.posicion[0]-1][ficha.posicion[1]] == ".":
                 return False
+            # Movimiento hacia la derecha
             elif ficha.posicion[1] < len(tablero)-1 and tablero[ficha.posicion[0]][ficha.posicion[1]+1] == ".":
                 return False
+            # Movimiento hacia abajo
             elif ficha.posicion[0] < len(tablero)-1 and tablero[ficha.posicion[0]+1][ficha.posicion[1]] == ".":
                 return False
 
         elif ficha.equipo == "rojo":
+            # Movimiento hacia arriba
             if ficha.posicion[0] > 0 and tablero[ficha.posicion[0]-1][ficha.posicion[1]] == ".":
                 return False
+            # Movimiento hacia la derecha
             elif ficha.posicion[1] < len(tablero)-1 and tablero[ficha.posicion[0]][ficha.posicion[1]+1] == ".":
                 return False
+            # Movimiento hacia la izquierda
             elif ficha.posicion[1] > 0 and tablero[ficha.posicion[0]][ficha.posicion[1]-1] == ".":
                 return False
 
@@ -250,9 +258,22 @@ def victoria_bloqueo():
     return False
 
 # Función principal
-def jugar(n):
-    print("Bienvenido a Dodgem!!!")
-    print("Comienza el equipo de las X")
+def jugar():
+
+    print("====================================")
+    print("        Bienvenido a Dodgem         ")
+    print("====================================")
+
+    n = input("Ingrese el tamaño del tablero (mínimo 4 y con numero PAR): ")
+    while not n.isdigit() or int(n) < 4 or int(n) % 2 != 0:
+        print("ERROR: Ingrese un valor numérico válido")
+        n = input("Ingrese el tamaño del tablero (mínimo 4 y con numero PAR): ")
+    n = int(n)
+
+    limpiar_consola()
+
+    # Comienzo del juego
+    print("Comienza el equipo de las X \n")
     tablero = generar_tablero(n)
     equipo_a = []
     equipo_r = []
@@ -265,41 +286,49 @@ def jugar(n):
         print("Turno del equipo de las X")
         imprimir_tablero(tablero)
         coordenada_jugar = None
-
-        while coordenada_jugar == None:
-            coordenada_jugar = seleccion_ficha("azul", tablero)
-
-        for ficha in equipo_a:
-            if ficha.posicion == coordenada_jugar:
-                ficha.mover_ficha(tablero)
-
-        if faltan_fichas_coronar(equipo_a):
-            print("Felicidades. Gana el equipo de las X")
+        if equipo_bloqueado(equipo_a, tablero):
+            print("El equipo de las X no puede moverse. Gana el equipo de las O")
             exit()
 
-        limpiar_consola()
-        # Juega O
-        print("Turno del equipo de los O")
-        imprimir_tablero(tablero)
-        coordenada_jugar = None
-        while coordenada_jugar == None:
-            coordenada_jugar = seleccion_ficha("rojo", tablero)
-        for ficha in equipo_r:
-            if ficha.posicion == coordenada_jugar:
-                ficha.mover_ficha(tablero)
-
-        if faltan_fichas_coronar(equipo_r):
-            print("Felicidades. Gana el equipo de las O")
+        elif equipo_bloqueado(equipo_r, tablero):
+            print("El equipo de las O no puede moverse. Gana el equipo de las X")
             exit()
 
-        limpiar_consola()
+        else:
+            while coordenada_jugar == None:
+                coordenada_jugar = seleccion_ficha("azul", tablero)
+
+            for ficha in equipo_a:
+                if ficha.posicion == coordenada_jugar:
+                    ficha.mover_ficha(tablero)
+
+            if faltan_fichas_coronar(equipo_a):
+                print("Felicidades. Gana el equipo de las X")
+                exit()
+
+            limpiar_consola()
+            # Juega O
+            print("Turno del equipo de los O")
+            imprimir_tablero(tablero)
+            coordenada_jugar = None
+            while coordenada_jugar == None:
+                coordenada_jugar = seleccion_ficha("rojo", tablero)
+            for ficha in equipo_r:
+                if ficha.posicion == coordenada_jugar:
+                    ficha.mover_ficha(tablero)
+
+            if faltan_fichas_coronar(equipo_r):
+                print("Felicidades. Gana el equipo de las O")
+                exit()
+
+            limpiar_consola()
 
 
 def limpiar_consola():
     os.system('cls' if os.name == 'nt' else 'clear')
     print("\n" * 500)
 
-jugar(4)
+jugar()
 
 
 
