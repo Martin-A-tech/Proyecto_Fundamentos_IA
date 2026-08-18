@@ -61,8 +61,10 @@ class Ficha:
 
         return int(peticion)
 
-    # Esta función se debe de revisar, debido a que no tengo claro todavía de como retornar el tablero o como hacer para actualizar las listas de las fichas
-    # La parte lógica yá está hecha, esto quiere decir que esta función detecta los movimientos legales, cuando una pieza corona y cuando es inválida la jugada porque se acaba el tablero
+    # Esta función se debe de revisar, debido a que no tengo claro todavía de como retornar el 
+    # tablero o como hacer para actualizar las listas de las fichas
+    # La parte lógica yá está hecha, esto quiere decir que esta función detecta los movimientos
+    #  legales, cuando una pieza corona y cuando es inválida la jugada porque se acaba el tablero
 
     def mover_ficha(self, tablero):
         movimiento_valido = False
@@ -254,8 +256,16 @@ def equipo_bloqueado(equipo_x, tablero):
 
     return True
 
-def victoria_bloqueo():
-    return False
+def generar_codigo(tablero, turno_jugador):
+    # String vacio para el codigo
+    codigo_tablero = ""
+
+    # Recorre el tablero y va agregando cada celda al string
+    for fila in tablero:
+        for celda in fila:
+            codigo_tablero += celda
+
+    return codigo_tablero + turno_jugador
 
 # Función principal
 def jugar():
@@ -277,6 +287,7 @@ def jugar():
     tablero = generar_tablero(n)
     equipo_a = []
     equipo_r = []
+    historial = []
     llenar_tablero(tablero, equipo_a, equipo_r)
     parar_juego = False
 
@@ -301,10 +312,17 @@ def jugar():
             for ficha in equipo_a:
                 if ficha.posicion == coordenada_jugar:
                     ficha.mover_ficha(tablero)
-
+      
             if faltan_fichas_coronar(equipo_a):
                 print("Felicidades. Gana el equipo de las X")
                 exit()
+
+            # Verifica si el tablero ya se ha repetido dos veces, en caso de que sí, termina el juego en empate
+            codigo_actual = generar_codigo(tablero, "X")
+            if historial.count(codigo_actual) >= 2:
+                print("Devido a repeticion de movimientos el juego queda en empate")
+                return
+            historial.append(codigo_actual)
 
             limpiar_consola()
             # Juega O
@@ -320,6 +338,13 @@ def jugar():
             if faltan_fichas_coronar(equipo_r):
                 print("Felicidades. Gana el equipo de las O")
                 exit()
+
+            # Verifica si el tablero ya se ha repetido dos veces, en caso de que sí, termina el juego en empate
+            codigo_actual = generar_codigo(tablero, "O")
+            if historial.count(codigo_actual) >= 2:
+                print("Devido a repeticion de movimientos el juego queda en empate")
+                return
+            historial.append(codigo_actual)
 
             limpiar_consola()
 
